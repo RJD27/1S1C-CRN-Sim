@@ -275,11 +275,13 @@ namespace CRNSimulator
             Console.WriteLine(oneSC[0, 3]);
             Console.WriteLine(oneSC[1, 3]);*/
 
+            //Rule Logic Plan B
             Program pr = new Program();
             int ruleNum = 0;
             pr.RuleLogic(ruleNum, ref userRules, ref speciesLetters, ref speciesInts, ref reachInts);
         }
 
+        //Rule Logic Function Plan B
         public void RuleLogic(int ruleNum, ref string[] userRules, ref char[] speciesLetters, ref int[] speciesInts, ref int[] reachInts)
         {
             char let;
