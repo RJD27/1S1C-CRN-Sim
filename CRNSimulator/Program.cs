@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Text.RegularExpressions;
+using Reachability1S1C;
 
 namespace CRNSimulator
 {
@@ -14,6 +15,7 @@ namespace CRNSimulator
             string[] reachCheck = { };
             char[] speciesLetters = { };
 
+            int i;
             int speciesNum = 0;
             bool validInput = false;
             string input;
@@ -42,7 +44,7 @@ namespace CRNSimulator
             Console.WriteLine("===========================================");
 
             //Checking for initial amount of species
-            for (int i = 0; i < species.Length; i++)
+            for (i = 0; i < species.Length; i++)
             {
                 int isNum;
                 bool isNumber = false;
@@ -94,7 +96,7 @@ namespace CRNSimulator
             int[] reachInts = Array.ConvertAll(reachSpecies, int.Parse);
 
 
-            for (int i = 0; i < species.Length; i++)
+            for (i = 0; i < species.Length; i++)
             {
                 totalSpecies += speciesInts[i];
                 totalReach += reachInts[i];
@@ -113,7 +115,7 @@ namespace CRNSimulator
 
             Console.WriteLine("===========================================");
             //Input user rules
-            Console.WriteLine("What restrictions do you want to use (Type 'q' when done): ");
+            Console.WriteLine("What restrictions do you want to implement (Type 'q' when done): ");
 
             string[] userRules = { };
 
@@ -149,7 +151,7 @@ namespace CRNSimulator
             //Checks if crn Rule set is 1-source 1-consuming
             for (int l = 0; l < speciesNum; l++)
             {
-                for (int i = 0; i < userRules.Length; i++)
+                for (i = 0; i < userRules.Length; i++)
                 {
                     currentRule = userRules[i];
                     afterEquals = false;
@@ -196,7 +198,7 @@ namespace CRNSimulator
             }
 
             //checks for equal amount of species being consumed and produced
-            for (int i = 0; i < userRules.Length; i++)
+            for (i = 0; i < userRules.Length; i++)
             {
                 currentRule = userRules[i];
                 afterEquals = false;
@@ -266,6 +268,192 @@ namespace CRNSimulator
                 currentSpecies++;
             }
 
+
+            //splitting each rule from left to right in their own array
+            string[] subLeft = new string[userRules.Length];
+            string[] addRight = new string[userRules.Length];
+
+            for (i = 0; i < userRules.Length; i++)
+            {
+                string[] ruleSplit = userRules[i].Split('=');
+                subLeft[i] = ruleSplit[0];
+                addRight[i] = ruleSplit[1];
+            }
+
+
+            //Algorithm
+            /*bool complete = false;
+            do
+            {
+                char specCheck = 'A';
+
+                for (int j = 0; j < species.Length; j++){
+
+                    specCheck++;
+                }
+
+
+            } while (reachInts == speciesInts);*/
+
+            for (i = 0; i < speciesInts.Length; i++)
+            {
+                string leftNum1 = "", leftNum2 = "", rightNum1 = "", rightNum2 = "";
+
+                string selectedRuleLeft, selectedRuleRight;
+                char leftLetter = '\0', leftLetter2 = '\0', rightLetter = '\0', rightLetter2 = '\0';
+
+
+                //grabs each rule from the left and right of '='
+                for (int f = 0; f < userRules.Length; f++)
+                {
+                    selectedRuleLeft = subLeft[f];
+                    selectedRuleRight = addRight[f];
+
+                    //traverses through the selected rule looking for species
+                    foreach (char l in selectedRuleLeft)
+                    {
+                        if (char.IsDigit(l))
+                        {
+                            if (leftLetter == '\0')
+                            {
+                                leftNum1 += l;
+                            }
+                            else
+                            {
+                                leftNum2 += l;
+                            }
+                        }
+                        else if (char.IsLetter(l))
+                        {
+                            if (leftLetter == '\0')
+                            {
+                                leftLetter = l;
+                            }
+                            else
+                            {
+                                leftLetter2 = l;
+
+                            }
+                        }
+                    }
+
+                    foreach (char r in selectedRuleRight)
+                    {
+                        if (char.IsDigit(r))
+                        {
+                            if (rightLetter == '\0')
+                            {
+                                rightNum1 += r;
+                            }
+                            else
+                            {
+                                rightNum2 += r;
+                            }
+                        }
+                        else if (char.IsLetter(r))
+                        {
+
+                            if (rightLetter == '\0')
+                            {
+                                rightLetter = r;
+                            }
+                            else
+                            {
+                                rightLetter2 = r;
+
+                            }
+                        }
+                    }
+
+                    //Checking if leftLetter needs subtracting or adding
+                    if (speciesInts[Char.ToUpper(leftLetter) - 'A'] > reachInts[Char.ToUpper(leftLetter) - 'A'] || speciesInts[Char.ToUpper(leftLetter2) - 'A'] > reachInts[Char.ToUpper(leftLetter2) - 'A'])
+                    {
+                        Console.WriteLine("Subtracting from species " + Char.ToUpper(leftLetter) + "...");
+
+                        while (speciesInts[Char.ToUpper(leftLetter) - 'A'] > reachInts[Char.ToUpper(leftLetter) - 'A'] || speciesInts[Char.ToUpper(leftLetter2) - 'A'] > reachInts[Char.ToUpper(leftLetter2) - 'A'])
+                        {
+                            Functions.SubtractingSpecies(speciesInts, leftLetter, leftNum1, leftLetter2, leftNum2, rightLetter, rightNum1, rightLetter2, rightNum2);
+                        }
+
+                        Console.WriteLine("No subtracting needed for " + Char.ToUpper(leftLetter) + "!");
+
+                    }
+                    
+                    if (speciesInts[Char.ToUpper(leftLetter) - 'A'] < reachInts[Char.ToUpper(leftLetter) - 'A'] || speciesInts[Char.ToUpper(leftLetter2) - 'A'] < reachInts[Char.ToUpper(leftLetter2) - 'A'])
+                    {
+                        while (speciesInts[Char.ToUpper(leftLetter) - 'A'] < reachInts[Char.ToUpper(leftLetter) - 'A'] || speciesInts[Char.ToUpper(leftLetter2) - 'A'] < reachInts[Char.ToUpper(leftLetter2) - 'A'])
+                        {
+                            Functions.AddingSpecies(speciesInts, leftLetter, leftNum1, leftLetter2, leftNum2, rightLetter, rightNum1, rightLetter2, rightNum2);
+                        }
+                        Console.WriteLine("No adding needed!");
+                    }
+
+                    /*//Checking if leftLetter2 needs subtracting or adding
+                    if (speciesInts[Char.ToUpper(leftLetter2) - 'A'] > reachInts[Char.ToUpper(leftLetter2) - 'A'])
+                    {
+                        Console.WriteLine("Subtracting from species " + speciesInts[Char.ToUpper(leftLetter2) - 'A'] + "...");
+
+                        while (speciesInts[Char.ToUpper(leftLetter2) - 'A'] > reachInts[Char.ToUpper(leftLetter2) - 'A'])
+                        {
+                            Functions.SubtractingSpecies(speciesInts, leftLetter, leftNum1, leftLetter2, leftNum2, rightLetter, rightNum1, rightLetter2, rightNum2);
+                        }
+
+                        Console.WriteLine("No subtracting needed!");
+
+                    }
+                    else if (speciesInts[Char.ToUpper(leftLetter2) - 'A'] < reachInts[Char.ToUpper(leftLetter2) - 'A'])
+                    {
+                        while (speciesInts[Char.ToUpper(leftLetter2) - 'A'] < reachInts[Char.ToUpper(leftLetter2) - 'A'])
+                        {
+                            Functions.AddingSpecies(speciesInts, leftLetter, leftNum1, leftLetter2, leftNum2, rightLetter, rightNum1, rightLetter2, rightNum2);
+                        }
+                        Console.WriteLine("No adding needed!");
+                    }*/
+
+                    //Checking if rightLetter  needs adding or subtracting
+                    if (speciesInts[Char.ToUpper(rightLetter) - 'A'] > reachInts[Char.ToUpper(rightLetter) - 'A'] || speciesInts[Char.ToUpper(rightLetter2) - 'A'] > reachInts[Char.ToUpper(rightLetter2) - 'A'])
+                    {
+                        while (speciesInts[Char.ToUpper(rightLetter) - 'A'] > reachInts[Char.ToUpper(rightLetter) - 'A'] || speciesInts[Char.ToUpper(rightLetter2) - 'A'] > reachInts[Char.ToUpper(rightLetter2) - 'A'])
+                        {
+                            Functions.SubtractingSpecies(speciesInts, leftLetter, leftNum1, leftLetter2, leftNum2, rightLetter, rightNum1, rightLetter2, rightNum2);
+                        }
+
+                        Console.WriteLine("No subtracting needed!");
+                    }
+                    else if (speciesInts[Char.ToUpper(rightLetter) - 'A'] < reachInts[Char.ToUpper(rightLetter) - 'A'] || speciesInts[Char.ToUpper(rightLetter2) - 'A'] < reachInts[Char.ToUpper(rightLetter2) - 'A'])
+                    {
+                        while (speciesInts[Char.ToUpper(rightLetter) - 'A'] < reachInts[Char.ToUpper(rightLetter) - 'A'] || speciesInts[Char.ToUpper(rightLetter2) - 'A'] < reachInts[Char.ToUpper(rightLetter2) - 'A'])
+                        {
+                            Functions.AddingSpecies(speciesInts, leftLetter, leftNum1, leftLetter2, leftNum2, rightLetter, rightNum1, rightLetter2, rightNum2);
+                        }
+
+                        Console.WriteLine("No adding needed!");
+                    }
+/*
+                    //Checking if rightLetter2  needs adding or subtracting
+                    if (speciesInts[Char.ToUpper(rightLetter2) - 'A'] > reachInts[Char.ToUpper(rightLetter2) - 'A'])
+                    {
+                        while (speciesInts[Char.ToUpper(rightLetter2) - 'A'] < reachInts[Char.ToUpper(rightLetter2) - 'A'])
+                        {
+                            Functions.SubtractingSpecies(speciesInts, leftLetter, leftNum1, leftLetter2, leftNum2, rightLetter, rightNum1, rightLetter2, rightNum2);
+                        }
+
+                        Console.WriteLine("No subtracting needed!");
+                    }
+                    else if (speciesInts[Char.ToUpper(rightLetter2) - 'A'] < reachInts[Char.ToUpper(rightLetter2) - 'A'])
+                    {
+                        while (speciesInts[Char.ToUpper(rightLetter2) - 'A'] < reachInts[Char.ToUpper(rightLetter2) - 'A'])
+                        {
+                            Functions.AddingSpecies(speciesInts, leftLetter, leftNum1, leftLetter2, leftNum2, rightLetter, rightNum1, rightLetter2, rightNum2);
+                        }
+
+                        Console.WriteLine("No adding needed!");
+                    }*/
+                }
+
+            }
+
+
             /*Console.WriteLine(oneSC[0, 0]);
             Console.WriteLine(oneSC[1, 0]);
             Console.WriteLine(oneSC[0, 1]);
@@ -276,13 +464,13 @@ namespace CRNSimulator
             Console.WriteLine(oneSC[1, 3]);*/
 
             //Rule Logic Plan B
-            Program pr = new Program();
+/*            Program pr = new Program();
             int ruleNum = 0;
-            pr.RuleLogic(ruleNum, ref userRules, ref speciesLetters, ref speciesInts, ref reachInts);
+            pr.RuleLogic(ruleNum, ref userRules, ref speciesLetters, ref speciesInts, ref reachInts);*/
         }
 
         //Rule Logic Function Plan B
-        public void RuleLogic(int ruleNum, ref string[] userRules, ref char[] speciesLetters, ref int[] speciesInts, ref int[] reachInts)
+       /* public void RuleLogic(int ruleNum, ref string[] userRules, ref char[] speciesLetters, ref int[] speciesInts, ref int[] reachInts)
         {
             char let;
             string cRule = userRules[ruleNum];
@@ -318,7 +506,7 @@ namespace CRNSimulator
                     isInt = int.Parse(notInt);
                     notInt = "";
                 }
-            }
+            }*/
             //Needs for loop to check each species for reach
             /*if (speciesInts == reachInts) 
             {
@@ -332,6 +520,6 @@ namespace CRNSimulator
             Console.WriteLine(speciesInts);
             Console.WriteLine(reachInts);*/
 
-        }
+        //}
     }
 }
