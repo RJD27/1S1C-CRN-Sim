@@ -1,16 +1,16 @@
 ﻿using System;
+using System.Linq;
 
 namespace Reachability1S1C
 {
     internal class Functions
     {
-        public static void DisplaySpecies(int[] speciesInts)
+        public static void DisplaySpecies(int[] speciesInts, char[] speciesLetters)
         {
-            Console.WriteLine("A: " + speciesInts[0]);
-            Console.WriteLine("B: " + speciesInts[1]);
-            Console.WriteLine("C: " + speciesInts[2]);
-            Console.WriteLine("D: " + speciesInts[3]);
-
+            for (int i = 0; i < speciesLetters.Length; i++)
+            {
+                Console.WriteLine(Char.ToUpper(speciesLetters[i]) + ": " + speciesInts[i]);
+            }
             Console.WriteLine("-----------------------------------------");
         }
 
@@ -87,7 +87,7 @@ namespace Reachability1S1C
         }
 
 
-        public static void AddingSpecies(ref int[] speciesInts, ref char leftLetter1, ref int leftNum1, ref char leftLetter2, ref int leftNum2, ref char rightLetter1, ref int rightNum1, ref char rightLetter2, ref int rightNum2)
+        public static void AddingSpecies(ref int[] speciesInts, char[] speciesLetters, ref char leftLetter1, ref int leftNum1, ref char leftLetter2, ref int leftNum2, ref char rightLetter1, ref int rightNum1, ref char rightLetter2, ref int rightNum2, bool printOutput)
         {
 
             speciesInts[Char.ToUpper(leftLetter1) - 'A'] += leftNum1;
@@ -96,12 +96,14 @@ namespace Reachability1S1C
             speciesInts[Char.ToUpper(rightLetter1) - 'A'] -= rightNum1;
             speciesInts[Char.ToUpper(rightLetter2) - 'A'] -= rightNum2;
 
-            DisplaySpecies(speciesInts);
-
-            System.Threading.Thread.Sleep(1500);
+            if (printOutput)
+            {
+                DisplaySpecies(speciesInts, speciesLetters);
+                System.Threading.Thread.Sleep(1500);
+            }
         }
 
-        public static void SubtractingSpecies(ref int[] speciesInts, ref char leftLetter1, ref int leftNum1, ref char leftLetter2, ref int leftNum2, ref char rightLetter1, ref int rightNum1, ref char rightLetter2, ref int rightNum2)
+        public static void SubtractingSpecies(ref int[] speciesInts, char[] speciesLetters, ref char leftLetter1, ref int leftNum1, ref char leftLetter2, ref int leftNum2, ref char rightLetter1, ref int rightNum1, ref char rightLetter2, ref int rightNum2, bool printOutput)
         {
 
             speciesInts[Char.ToUpper(leftLetter1) - 'A'] -= leftNum1;
@@ -110,9 +112,11 @@ namespace Reachability1S1C
             speciesInts[Char.ToUpper(rightLetter1) - 'A'] += rightNum1;
             speciesInts[Char.ToUpper(rightLetter2) - 'A'] += rightNum2;
 
-            DisplaySpecies(speciesInts);
-
-            System.Threading.Thread.Sleep(1500);
+            if (printOutput)
+            {
+                DisplaySpecies(speciesInts, speciesLetters);
+                System.Threading.Thread.Sleep(1500);
+            }
         }
 
         public static bool ArraysEqual(int[] a1, int[] a2)
@@ -128,26 +132,30 @@ namespace Reachability1S1C
                 {
                     return false;
                 }
-            }
+            }// can put species reached here
 
             return true;
         }
 
-        public static (int, int) MaxDiff(int[] speciesInts, int[] reachInts)
+        public static (int, int) MaxDiff(int[] speciesInts, int[] reachInts, bool[] existNegativeNumber)
         {
             int maxDiff = int.MinValue;
             int maxIndex = -1;
             for (int i = 0; i < speciesInts.Length; i++)
             {
-                int diff = Math.Abs(speciesInts[i] - reachInts[i]);
-                if (diff > maxDiff)
+                if (!existNegativeNumber[i])
                 {
-                    maxDiff = diff;
-                    maxIndex = i;
+                    int diff = Math.Abs(speciesInts[i] - reachInts[i]);
+                    if (diff > maxDiff)
+                    {
+                        maxDiff = diff;
+                        maxIndex = i;
+                    }
                 }
             }
             return (maxDiff, maxIndex);
         }
+
     }
 }
 
