@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+
 
 namespace Reachability1S1C
 {
@@ -50,6 +52,7 @@ namespace Reachability1S1C
             }
         }
 
+
         public static void IsSelectingLeftRule(ref char leftLetter1, ref char leftLetter2, string selectedRuleLeft, ref int leftNum1, ref int leftNum2)
         {
             leftLetter1 = '\0';
@@ -87,35 +90,44 @@ namespace Reachability1S1C
         }
 
 
-        public static void AddingSpecies(ref int[] speciesInts, char[] speciesLetters, ref char leftLetter1, ref int leftNum1, ref char leftLetter2, ref int leftNum2, ref char rightLetter1, ref int rightNum1, ref char rightLetter2, ref int rightNum2, bool printOutput)
+
+        public static void AddingSpecies(ref int[] speciesInts, int[] reachInts, bool[] existNegativeNumber, char[] speciesLetters, ref char leftLetter1, ref int leftNum1, ref char leftLetter2, ref int leftNum2, ref char rightLetter1, ref int rightNum1, ref char rightLetter2, ref int rightNum2, bool printOutput)
         {
-
-            speciesInts[Char.ToUpper(leftLetter1) - 'A'] += leftNum1;
-            speciesInts[Char.ToUpper(leftLetter2) - 'A'] += leftNum2;
-
-            speciesInts[Char.ToUpper(rightLetter1) - 'A'] -= rightNum1;
-            speciesInts[Char.ToUpper(rightLetter2) - 'A'] -= rightNum2;
-
-            if (printOutput)
+            if (!IsSpeciesRepeated(speciesInts, reachInts, existNegativeNumber, speciesLetters, leftLetter1, leftLetter2, rightLetter1, rightLetter2))
             {
-                DisplaySpecies(speciesInts, speciesLetters);
-                System.Threading.Thread.Sleep(1500);
+                speciesInts[Char.ToUpper(leftLetter1) - 'A'] += leftNum1;
+                speciesInts[Char.ToUpper(leftLetter2) - 'A'] += leftNum2;
+
+                speciesInts[Char.ToUpper(rightLetter1) - 'A'] -= rightNum1;
+                speciesInts[Char.ToUpper(rightLetter2) - 'A'] -= rightNum2;
+                if (printOutput)
+                {
+                    Console.WriteLine("Left Species: " + leftLetter1 + " " + leftLetter2);
+                    Console.WriteLine("Right Species: " + rightLetter1 + " " + rightLetter2);
+                    DisplaySpecies(speciesInts, speciesLetters);
+                    System.Threading.Thread.Sleep(1500);
+                }
             }
+
         }
 
-        public static void SubtractingSpecies(ref int[] speciesInts, char[] speciesLetters, ref char leftLetter1, ref int leftNum1, ref char leftLetter2, ref int leftNum2, ref char rightLetter1, ref int rightNum1, ref char rightLetter2, ref int rightNum2, bool printOutput)
+        public static void SubtractingSpecies(ref int[] speciesInts, int[] reachInts, bool[] existNegativeNumber, char[] speciesLetters, ref char leftLetter1, ref int leftNum1, ref char leftLetter2, ref int leftNum2, ref char rightLetter1, ref int rightNum1, ref char rightLetter2, ref int rightNum2, bool printOutput)
         {
-
-            speciesInts[Char.ToUpper(leftLetter1) - 'A'] -= leftNum1;
-            speciesInts[Char.ToUpper(leftLetter2) - 'A'] -= leftNum2;
-
-            speciesInts[Char.ToUpper(rightLetter1) - 'A'] += rightNum1;
-            speciesInts[Char.ToUpper(rightLetter2) - 'A'] += rightNum2;
-
-            if (printOutput)
+            if (!IsSpeciesRepeated(speciesInts, reachInts, existNegativeNumber, speciesLetters, leftLetter1, leftLetter2, rightLetter1, rightLetter2))
             {
-                DisplaySpecies(speciesInts, speciesLetters);
-                System.Threading.Thread.Sleep(1500);
+                speciesInts[Char.ToUpper(leftLetter1) - 'A'] -= leftNum1;
+                speciesInts[Char.ToUpper(leftLetter2) - 'A'] -= leftNum2;
+
+                speciesInts[Char.ToUpper(rightLetter1) - 'A'] += rightNum1;
+                speciesInts[Char.ToUpper(rightLetter2) - 'A'] += rightNum2;
+
+                if (printOutput)
+                {
+                    Console.WriteLine("Left Species: " + leftLetter1 + " " + leftLetter2);
+                    Console.WriteLine("Right Species: " + rightLetter1 + " " + rightLetter2);
+                    DisplaySpecies(speciesInts, speciesLetters);
+                    System.Threading.Thread.Sleep(1500);
+                }
             }
         }
 
@@ -137,25 +149,65 @@ namespace Reachability1S1C
             return true;
         }
 
-        public static (int, int) MaxDiff(int[] speciesInts, int[] reachInts, bool[] existNegativeNumber)
+        public static (int, int) LowestDiff(int[] speciesInts, int[] reachInts, bool[] existNegativeNumber)
         {
-            int maxDiff = int.MinValue;
-            int maxIndex = -1;
+            int lowestDiff = int.MaxValue;
+            int lowestIndex = -1;
             for (int i = 0; i < speciesInts.Length; i++)
             {
                 if (!existNegativeNumber[i])
                 {
                     int diff = Math.Abs(speciesInts[i] - reachInts[i]);
-                    if (diff > maxDiff)
+                    if (diff == 0) continue;  // Skip species with difference of 0
+                    if (diff < lowestDiff)
                     {
-                        maxDiff = diff;
-                        maxIndex = i;
+                        lowestDiff = diff;
+                        lowestIndex = i;
                     }
                 }
             }
-            return (maxDiff, maxIndex);
+            return (lowestDiff, lowestIndex);
         }
 
+        public static bool IsSpeciesRepeated(int[] speciesInts, int[] reachInts, bool[] existNegativeNumber, char[] speciesLetters, char leftLetter1, char leftLetter2, char rightLetter1, char rightLetter2)
+        {
+            int lowestIndex = LowestDiff(speciesInts, reachInts, existNegativeNumber).Item2;
+            char currentSpecies = Char.ToUpper(speciesLetters[lowestIndex]);
+
+            int specCount = 0;
+            if (Char.ToUpper(leftLetter1) == currentSpecies) specCount++;
+            if (Char.ToUpper(leftLetter2) == currentSpecies) specCount++;
+            if (Char.ToUpper(rightLetter1) == currentSpecies) specCount++;
+            if (Char.ToUpper(rightLetter2) == currentSpecies) specCount++;
+
+            return specCount == 2 || specCount == 4;
+        }
+
+        public static int CheckingForRepeatedValues(int[] speciesInts, ref bool unreachable, ref int checkingForRepetition)
+        {
+            List<int[]> speciesHistory = new List<int[]>();
+            speciesHistory.Add((int[])speciesInts.Clone());
+            if (checkingForRepetition >= 1)
+            {
+                for (int speciesClone = 0; speciesClone < checkingForRepetition; speciesClone++)
+                {
+                    if (speciesClone < speciesHistory.Count)
+                    {
+                        bool areEqual = Enumerable.SequenceEqual(speciesInts, speciesHistory[speciesClone]);
+                        if (areEqual)
+                        {
+                            if (speciesHistory.Count(h => Enumerable.SequenceEqual(h, speciesInts)) > 1)
+                            {
+                                unreachable = true;
+                                return -1;
+                            }
+                        }
+                    }
+                }
+            }
+            speciesHistory.Add((int[])speciesInts.Clone());
+            return speciesHistory.Count - 1;
+        }
     }
 }
 
