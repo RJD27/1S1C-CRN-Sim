@@ -2,7 +2,6 @@
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading;
 
 namespace CRNSimulator
 {
@@ -63,6 +62,7 @@ namespace CRNSimulator
                     else
                     {
                         Console.WriteLine("That is not a valid input.");
+                        Environment.Exit(0);
                     }
                 }
 
@@ -195,6 +195,7 @@ namespace CRNSimulator
             if (not1s1c == true)
             {
                 Console.WriteLine("Not 1-source 1-consuming due to above reasons");
+                Environment.Exit(0);
             }
 
             //checks for equal amount of species being consumed and produced
@@ -282,7 +283,7 @@ namespace CRNSimulator
 
 
             // --------------------------------------- Algorithm -------------------------------------
-            bool[] existNegativeNumber = new bool[speciesInts.Length];
+            bool[] speciesFlag = new bool[speciesInts.Length];
             int checkingUnreachable = 0;
             int checkingForRepetition = 0;
             bool unreachable = false;
@@ -294,18 +295,23 @@ namespace CRNSimulator
                 string selectedRuleLeft, selectedRuleRight;
                 char leftLetter1 = '\0', leftLetter2 = '\0', rightLetter1 = '\0', rightLetter2 = '\0';
 
-                var (lowestDiff, lowestIndex) = Functions.LowestDiff(speciesInts, reachInts, existNegativeNumber);
+                var (lowestDiff, lowestIndex) = Functions.LowestDiff(speciesInts, reachInts, speciesFlag);
                 Console.WriteLine(lowestDiff + " " + lowestIndex);
-                Thread.Sleep(1500);
+                //Thread.Sleep(1500);
 
                 checkingForRepetition++;
-                checkingUnreachable += 1;
+                ++checkingUnreachable;
 
-                Functions.CheckingForRepeatedValues(speciesInts, ref unreachable, ref checkingForRepetition);
+                Functions.CheckingForRepeatedCycles(speciesInts, ref unreachable, ref checkingForRepetition);
 
                 if (checkingUnreachable == userRules.Length + 1)
                 {
                     unreachable = true;
+                }
+
+                if (speciesFlag.All(b => b))
+                {
+                    Array.Clear(speciesFlag, 0, speciesFlag.Length);
                 }
 
                 // Spliting the rules on the left and right side of '='
@@ -314,34 +320,24 @@ namespace CRNSimulator
                     int totalInc = 0;
                     selectedRuleLeft = subLeft[num];
                     selectedRuleRight = addRight[num];
-                    if (Functions.IsSpeciesRepeated(speciesInts, reachInts, existNegativeNumber, speciesLetters, leftLetter1, leftLetter2, rightLetter1, rightLetter2))
+                    Functions.IsSelectingLeftRule(ref leftLetter1, ref leftLetter2, selectedRuleLeft, ref leftNum1, ref leftNum2);
+                    Functions.IsSelectingRightRule(ref rightNum1, ref rightNum2, ref rightLetter1, ref rightLetter2, selectedRuleRight);
+
+                    if (Functions.IsSpeciesRepeated(speciesInts, reachInts, speciesFlag, speciesLetters, leftLetter1, leftLetter2, rightLetter1, rightLetter2))
                     {
-                        num++;
+                        continue;
                     }
 
                     // If lowestDiff species in speciesInt needs to subtract to reach reachInts and checking where that species is in the rules
-                    if (speciesInts[lowestIndex] > reachInts[lowestIndex] && selectedRuleLeft.Contains(Char.ToLower((char)(lowestIndex + 'A'))) && !existNegativeNumber[lowestIndex])
+                    if (speciesInts[lowestIndex] > reachInts[lowestIndex] && selectedRuleLeft.Contains(Char.ToLower((char)(lowestIndex + 'A'))) && !speciesFlag[lowestIndex])
                     {
-                        Functions.IsSelectingLeftRule(ref leftLetter1, ref leftLetter2, selectedRuleLeft, ref leftNum1, ref leftNum2);
-                        Functions.IsSelectingRightRule(ref rightNum1, ref rightNum2, ref rightLetter1, ref rightLetter2, selectedRuleRight);
+                        Console.WriteLine("Entered Subtraction Loop For Species " + char.ToUpper(speciesLetters[lowestIndex]));
                         Console.WriteLine("leftnum1: " + leftNum1 + " LeftNum2: " + leftNum2 + " LeftLetter1: " + leftLetter1 + " LeftLetter2: " + leftLetter2);
                         Console.WriteLine("rightnum1: " + rightNum1 + " rightNum2: " + rightNum2 + " rightLetter1: " + rightLetter1 + " rightLetter2: " + rightLetter2);
                         checkingUnreachable = 0;
 
-                        // Add and subract until the species reaches reachInts
-                        if (lowestDiff == 1)
-                        {
-                            totalInc = 1;
-                        }
-                        else if (leftLetter1 == speciesLetters[lowestIndex])
-                        {
-                            totalInc = lowestDiff / leftNum1;
-                        }
-                        else if (leftLetter2 == speciesLetters[lowestIndex])
-                        {
-                            totalInc = lowestDiff / leftNum2;
-                        }
 
+                        totalInc = Functions.GetIncrementValue(lowestDiff, speciesLetters, lowestIndex, selectedRuleLeft, leftLetter1, leftNum1, leftLetter2, leftNum2);
                         Console.WriteLine("Needs Subtracting: " + lowestDiff + " " + speciesLetters[lowestIndex]);
                         Console.WriteLine(speciesInts[lowestIndex] + " " + reachInts[lowestIndex]);
                         do
@@ -352,20 +348,20 @@ namespace CRNSimulator
                             {
                                 // Subtraction Loop
                                 int[] tempSpeciesInts = (int[])speciesInts.Clone();
-                                Functions.SubtractingSpecies(ref tempSpeciesInts, reachInts, existNegativeNumber, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, false);
+                                Functions.SubtractingSpecies(ref tempSpeciesInts, reachInts, speciesFlag, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, false);
 
                                 if (tempSpeciesInts.Any(x => x < 0))
                                 {
                                     Console.WriteLine("A negative number was hit!");
-                                    existNegativeNumber[lowestIndex] = true;
+                                    speciesFlag[lowestIndex] = true;
                                     break;
                                 }
                                 Console.WriteLine("Subtracting Species: " + Char.ToUpper(speciesLetters[lowestIndex]));
-                                Functions.SubtractingSpecies(ref speciesInts, reachInts, existNegativeNumber, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, true);
+                                Functions.SubtractingSpecies(ref speciesInts, reachInts, speciesFlag, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, true);
                                 Console.WriteLine(speciesInts[lowestIndex] + " " + reachInts[lowestIndex]);
                             }
 
-                            if (existNegativeNumber[lowestIndex])
+                            if (speciesFlag[lowestIndex])
                             {
                                 Console.WriteLine("Changing Species...");
                                 break;
@@ -376,71 +372,29 @@ namespace CRNSimulator
                             while (subDiff % 1 != 0)
                             {
                                 int[] tempSpeciesInts = (int[])speciesInts.Clone();
-                                Functions.AddingSpecies(ref tempSpeciesInts, reachInts, existNegativeNumber, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, false);
+                                Functions.AddingSpecies(ref tempSpeciesInts, reachInts, speciesFlag, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, false);
 
                                 if (tempSpeciesInts.Any(x => x < 0))
                                 {
-                                    existNegativeNumber[lowestIndex] = true;
+                                    speciesFlag[lowestIndex] = true;
                                     break;
                                 }
-                                Functions.AddingSpecies(ref speciesInts, reachInts, existNegativeNumber, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, true);
+                                Functions.AddingSpecies(ref speciesInts, reachInts, speciesFlag, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, true);
                                 subDiff = reachInts[lowestIndex] - speciesInts[lowestIndex];
                             }
+                            Functions.UpdateSpeciesFlag(speciesInts, reachInts, speciesFlag, lowestIndex);
 
-                            if (existNegativeNumber[lowestIndex])
-                            {
-                                break;
-                            }
-
-                            // Subtracting till reach 
-                            for (int addDiff = 0; addDiff < subDiff; addDiff++)
-                            {
-                                Console.WriteLine("Subtracting to get to reach species for: " + Char.ToUpper(speciesLetters[lowestIndex]));
-                                int[] tempSpeciesInts = (int[])speciesInts.Clone();
-                                Functions.SubtractingSpecies(ref tempSpeciesInts, reachInts, existNegativeNumber, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, false);
-                                if (tempSpeciesInts.Any(x => x < 0))
-                                {
-                                    Console.WriteLine("A negative number was hit!");
-                                    existNegativeNumber[lowestIndex] = true;
-                                    break;
-                                }
-                                Functions.SubtractingSpecies(ref speciesInts, reachInts, existNegativeNumber, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, true);
-                            }
-
-                            if (speciesInts[lowestIndex] != reachInts[lowestIndex])
-                            {
-                                existNegativeNumber[lowestIndex] = true;
-                            }
-                            else if (speciesInts[lowestIndex] == reachInts[lowestIndex])
-                            {
-                                Array.Fill(existNegativeNumber, false);
-                                Console.WriteLine("Species reached!");
-                            }
-
-                        } while (speciesInts[lowestIndex] != reachInts[lowestIndex] && !existNegativeNumber[lowestIndex]);
+                        } while (speciesInts[lowestIndex] != reachInts[lowestIndex] && !speciesFlag[lowestIndex]);
                     }
 
                     // If lowestDiff species in speciesInts needs to add to reach reachInts and checking where that species is in the rules
-                    if (speciesInts[lowestIndex] < reachInts[lowestIndex] && selectedRuleRight.Contains(Char.ToLower((char)(lowestIndex + 'A'))) && !existNegativeNumber[lowestIndex])
+                    if (speciesInts[lowestIndex] < reachInts[lowestIndex] && selectedRuleRight.Contains(Char.ToLower((char)(lowestIndex + 'A'))) && !speciesFlag[lowestIndex])
                     {
                         Console.WriteLine("Entered Addition Loop For Species " + char.ToUpper(speciesLetters[lowestIndex]));
-                        Functions.IsSelectingRightRule(ref rightNum1, ref rightNum2, ref rightLetter1, ref rightLetter2, selectedRuleRight);
-                        Functions.IsSelectingLeftRule(ref leftLetter1, ref leftLetter2, selectedRuleLeft, ref leftNum1, ref leftNum2);
                         Console.WriteLine("leftnum1: " + leftNum1 + " LeftNum2: " + leftNum2 + " LeftLetter1: " + leftLetter1 + " LeftLetter2: " + leftLetter2);
                         Console.WriteLine("rightnum1: " + rightNum1 + " rightNum2: " + rightNum2 + " rightLetter1: " + rightLetter1 + " rightLetter2: " + rightLetter2);
 
-                        if (lowestDiff == 1)
-                        {
-                            totalInc = 1;
-                        }
-                        else if (rightLetter1 == speciesLetters[lowestIndex])
-                        {
-                            totalInc = lowestDiff / rightNum1;
-                        }
-                        else if (rightLetter2 == speciesLetters[lowestIndex])
-                        {
-                            totalInc = lowestDiff / rightNum2;
-                        }
+                        totalInc = Functions.GetIncrementValue(lowestDiff, speciesLetters, lowestIndex, selectedRuleLeft, leftLetter1, leftNum1, leftLetter2, leftNum2);
 
                         Console.WriteLine(lowestDiff + " " + speciesInts[lowestIndex]);
 
@@ -450,21 +404,21 @@ namespace CRNSimulator
                             for (int inc = 0; inc < totalInc; inc++)
                             {
                                 int[] tempSpeciesInts = (int[])speciesInts.Clone();
-                                Functions.SubtractingSpecies(ref tempSpeciesInts, reachInts, existNegativeNumber, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, false);
+                                Functions.SubtractingSpecies(ref tempSpeciesInts, reachInts, speciesFlag, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, false);
 
                                 if (tempSpeciesInts.Any(x => x < 0))
                                 {
                                     Console.WriteLine("A negative number hit!");
-                                    existNegativeNumber[lowestIndex] = true;
+                                    speciesFlag[lowestIndex] = true;
                                     break;
                                 }
 
                                 Console.WriteLine("Adding Species: " + Char.ToUpper(speciesLetters[lowestIndex]));
-                                Functions.SubtractingSpecies(ref speciesInts, reachInts, existNegativeNumber, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, true);
+                                Functions.SubtractingSpecies(ref speciesInts, reachInts, speciesFlag, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, true);
                                 Console.WriteLine(speciesInts[lowestIndex] + " " + reachInts[lowestIndex]);
                             }
 
-                            if (existNegativeNumber[lowestIndex] && speciesInts[lowestIndex] > reachInts[lowestIndex])
+                            if (speciesFlag[lowestIndex] && speciesInts[lowestIndex] > reachInts[lowestIndex])
                             {
                                 Console.WriteLine("Changing species..");
                                 break;
@@ -474,47 +428,22 @@ namespace CRNSimulator
                             while (subDiff % 1 != 0)
                             {
                                 int[] tempSpeciesInts = (int[])speciesInts.Clone();
-                                Functions.AddingSpecies(ref tempSpeciesInts, reachInts, existNegativeNumber, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, false);
+                                Functions.AddingSpecies(ref tempSpeciesInts, reachInts, speciesFlag, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, false);
 
                                 if (tempSpeciesInts.Any(x => x < 0))
                                 {
-                                    existNegativeNumber[lowestIndex] = true;
+                                    speciesFlag[lowestIndex] = true;
                                     break;
                                 }
 
-                                Functions.AddingSpecies(ref speciesInts, reachInts, existNegativeNumber, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, true);
+                                Functions.AddingSpecies(ref speciesInts, reachInts, speciesFlag, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, true);
                                 subDiff = reachInts[lowestIndex] - speciesInts[lowestIndex];
                             }
 
-                            if (existNegativeNumber[lowestIndex])
-                            {
-                                Console.WriteLine("A negative number was hit!");
-                                break;
-                            }
+                            Functions.UpdateSpeciesFlag(speciesInts, reachInts, speciesFlag, lowestIndex);
 
-                            for (int addDiff = 0; addDiff < subDiff; addDiff++)
-                            {
-                                int[] tempSpeciesInts = (int[])speciesInts.Clone();
-                                Functions.SubtractingSpecies(ref tempSpeciesInts, reachInts, existNegativeNumber, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, false);
-                                if (tempSpeciesInts.Any(x => x < 0))
-                                {
-                                    existNegativeNumber[lowestIndex] = true;
-                                    break;
-                                }
-                                Functions.SubtractingSpecies(ref speciesInts, reachInts, existNegativeNumber, speciesLetters, ref leftLetter1, ref leftNum1, ref leftLetter2, ref leftNum2, ref rightLetter1, ref rightNum1, ref rightLetter2, ref rightNum2, true);
-                            }
+                        } while (speciesInts[lowestIndex] != reachInts[lowestIndex] && !speciesFlag[lowestIndex] && speciesInts[lowestIndex] < reachInts[lowestIndex]);
 
-                            if (speciesInts[lowestIndex] != reachInts[lowestIndex])
-                            {
-                                existNegativeNumber[lowestIndex] = true;
-                            }
-                            else if (speciesInts[lowestIndex] == reachInts[lowestIndex])
-                            {
-                                Array.Fill(existNegativeNumber, false);
-                                Console.WriteLine("Species reached!");
-                            }
-
-                        } while (speciesInts[lowestIndex] != reachInts[lowestIndex] && !existNegativeNumber[lowestIndex] && speciesInts[lowestIndex] < reachInts[lowestIndex]);
                     }
 
                 }
